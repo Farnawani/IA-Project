@@ -21,13 +21,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import static javax.swing.JOptionPane.showMessageDialog;
+import sun.security.pkcs11.wrapper.Functions;
 
 /**
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSigninValidate"})
-public class StudentSigninValidate extends HttpServlet {
+@WebServlet(urlPatterns = {"/StudentReserveSlot"})
+public class StudentReserveSlot extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -45,46 +46,54 @@ public class StudentSigninValidate extends HttpServlet {
 
             response.setContentType("text/html");
 
-            String email = request.getParameter("studEmail");
-            String pass = request.getParameter("studPass");
+            String ID = request.getParameter("slotID");
+            int slotID = Integer.parseInt(ID);
+            String taID = request.getParameter("taID");
+            String timeFrom = request.getParameter("timeFrom");
+            HttpSession session = request.getSession();
+            String studID = (String) session.getAttribute("studID");
+
+           
+            
 
             //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM students WHERE StudEmail = ? AND StudPass = ?");
-                stmt.setString(1, email);
-                stmt.setString(2, pass);
-                ResultSet user;
-                user = stmt.executeQuery();
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO appointments (StudID, StaffID, Date, OHID) VALUES(?, ?, ?, ?)");
+                stmt.setString(1, studID);
+                stmt.setString(2, taID);
+                stmt.setString(3, timeFrom);
+                stmt.setInt(4, slotID);
 
-                if (user.next()){
-                    String name = user.getString("StudName");
-                    String ID = user.getString("StudID");
+                stmt.executeUpdate();
 
-                    HttpSession session = request.getSession();
-                    session.setAttribute("studName", name);
-                    session.setAttribute("studEmail", email);
-                    session.setAttribute("studID", ID);
-                    RequestDispatcher rd = request.getRequestDispatcher("studentHome.jsp");
-                    rd.forward(request, response);
-                } else {
-                    showMessageDialog(null, "Incorrect email or password!!");
-                    response.sendRedirect("studentSignin.jsp");
-                }
+                stmt = (PreparedStatement) con.prepareStatement("UPDATE officehours SET Avail = ? WHERE OHID = ?");
+                stmt.setBoolean(1, false);
+                stmt.setInt(2, slotID);
+                stmt.executeUpdate();
+                
+                showMessageDialog(null, "Slot Reserved Successfully!!");
+                String url = (String) session.getAttribute("origin");
+                
+                RequestDispatcher rd = request.getRequestDispatcher(url);
+                rd.forward(request, response);
+
 
                 out.close();
-                user.close();
                 stmt.close();
                 con.close();
 
             } catch (SQLException ex) {
-                Logger.getLogger(StudentSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(StudentSignupValidate.class
+                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
+
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(StudentSignupValidate.class
+                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
 
@@ -103,9 +112,7 @@ public class StudentSigninValidate extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-               processRequest(request, response);
-
+        processRequest(request, response);
     }
 
     /**

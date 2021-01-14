@@ -26,8 +26,8 @@ import static javax.swing.JOptionPane.showMessageDialog;
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSigninValidate"})
-public class StudentSigninValidate extends HttpServlet {
+@WebServlet(urlPatterns = {"/StudentSendMsg"})
+public class StudentSendMsg extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -45,46 +45,41 @@ public class StudentSigninValidate extends HttpServlet {
 
             response.setContentType("text/html");
 
-            String email = request.getParameter("studEmail");
-            String pass = request.getParameter("studPass");
+            String studID = request.getParameter("studID");
+            String taID = request.getParameter("taID");
+            String text = request.getParameter("sendMsg");
 
-            //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM students WHERE StudEmail = ? AND StudPass = ?");
-                stmt.setString(1, email);
-                stmt.setString(2, pass);
-                ResultSet user;
-                user = stmt.executeQuery();
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO messages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
+                stmt.setString(1, text);
+                stmt.setString(2, studID);
+                stmt.setString(3, taID);
+                stmt.executeUpdate();
 
-                if (user.next()){
-                    String name = user.getString("StudName");
-                    String ID = user.getString("StudID");
+                showMessageDialog(null, "Message Sent Successfully!!");
 
-                    HttpSession session = request.getSession();
-                    session.setAttribute("studName", name);
-                    session.setAttribute("studEmail", email);
-                    session.setAttribute("studID", ID);
-                    RequestDispatcher rd = request.getRequestDispatcher("studentHome.jsp");
-                    rd.forward(request, response);
-                } else {
-                    showMessageDialog(null, "Incorrect email or password!!");
-                    response.sendRedirect("studentSignin.jsp");
-                }
+                HttpSession session = request.getSession();
+                String url = (String) session.getAttribute("origin");
+                
+                RequestDispatcher rd = request.getRequestDispatcher(url);
+                rd.forward(request, response);
 
                 out.close();
-                user.close();
                 stmt.close();
                 con.close();
 
             } catch (SQLException ex) {
-                Logger.getLogger(StudentSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(StudentSignupValidate.class
+                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
+
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(StudentSignupValidate.class
+                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
 
@@ -103,9 +98,7 @@ public class StudentSigninValidate extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-               processRequest(request, response);
-
+        processRequest(request, response);
     }
 
     /**

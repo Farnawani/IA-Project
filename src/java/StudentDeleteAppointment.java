@@ -9,15 +9,17 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.*;
-import javax.mail.*;
-import javax.mail.internet.*;
-import javax.activation.*;
 import java.sql.SQLException;
-import java.util.Random;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -31,8 +33,8 @@ import static javax.swing.JOptionPane.showMessageDialog;
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSignupValidate"})
-public class StudentSignupValidate extends HttpServlet {
+@WebServlet(urlPatterns = {"/StudentDeleteAppointment"})
+public class StudentDeleteAppointment extends HttpServlet {
 
     private static void sendEmail(String from, String pass, String to, String subject, String body) {
         Properties props = System.getProperties();
@@ -65,18 +67,6 @@ public class StudentSignupValidate extends HttpServlet {
             me.printStackTrace();
         }
     }
-
-    String generatePass() {
-        String pass = "";
-        String alph = "qwertyuiopasdfghjklzxcvbnm1234567890";
-        for (int i = 0; i < 10; i++) {
-            Random random = new Random();
-            int r = random.nextInt(alph.length());
-            pass += alph.charAt(r);
-        }
-        return pass;
-    }
-
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -89,68 +79,56 @@ public class StudentSignupValidate extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-
         try (PrintWriter out = response.getWriter()) {
 
             response.setContentType("text/html");
 
-            String name = request.getParameter("studName");
-            String email = request.getParameter("studEmail");
-            String pass = generatePass();
-            String text = "Your password is " + pass + " , Please change it.";
+            HttpSession session = request.getSession();
+            String studID = (String) session.getAttribute("studID");
+            String studEmail = (String) session.getAttribute("studEmail");
+            String ID = request.getParameter("slotID");
+            int slotID = Integer.parseInt(ID);
+            String appID = request.getParameter("appID");
+            String slotTime = request.getParameter("slotTime");
 
-            sendEmail(email, "f1a2r3n4a5wani", "farnawanii@gmail.com", "Temporary Password", text);
-            //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM students WHERE StudEmail = ? AND StudPass = ?");
-                stmt.setString(1, email);
-                stmt.setString(2, pass);
-                ResultSet user;
-                user = stmt.executeQuery();
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("DELETE FROM appointments WHERE AppointID = ?");
+                stmt.setString(1, appID);
+                stmt.executeUpdate();
 
-                if (user.next()) {
-                    showMessageDialog(null, "Account Already Exists!!");
-                } else {
-                    stmt = (PreparedStatement) con.prepareStatement("INSERT INTO students (StudName, StudEmail, StudPass) VALUES(?, ?, ?)");
-                    stmt.setString(1, name);
-                    stmt.setString(2, email);
-                    stmt.setString(3, pass);
+                stmt = (PreparedStatement) con.prepareStatement("UPDATE officehours SET Avail = ? WHERE OHID = ?");
+                stmt.setBoolean(1, true);
+                stmt.setInt(2, slotID);
+                stmt.executeUpdate();
+                
+                showMessageDialog(null, "Appointment deleted Successfully!!");
+                String text = "Your Appointment, reserved at " + slotTime + ", is cancelled.";
+                sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", studEmail, "Appointment Cancellation", text);
+                
+                RequestDispatcher rd = request.getRequestDispatcher("studentHome.jsp");
+                rd.forward(request, response);
 
-                    int result = stmt.executeUpdate();
-
-                    if (result != 0) {
-                        showMessageDialog(null, "Please Check Your Email for your Password!!");
-                        RequestDispatcher rd = request.getRequestDispatcher("studentSignin.jsp");
-
-                        rd.forward(request, response);
-                    } else {
-                        showMessageDialog(null, "Something went wrong!!");
-                        RequestDispatcher rd = request.getRequestDispatcher("studentSignup.jsp");
-                        rd.forward(request, response);
-                    }
-                }
 
                 out.close();
                 stmt.close();
                 con.close();
 
             } catch (SQLException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
 
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
 
         }
-
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
