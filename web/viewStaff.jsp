@@ -75,7 +75,7 @@
         <div>
             Send Message
             <form method="POST" action="StudentSendMsg?studID=<%=studID%>&taID=<%=taID%>">
-                <textarea rows="5" cols="50" name="sendMsg"></textarea>
+                <textarea rows="3" cols="30" name="sendMsg"></textarea>
                 <input type="submit" value="Send">
             </form>
         </div>

@@ -45,6 +45,7 @@ public class StudentSignupValidate extends HttpServlet {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
+        
         Session session = Session.getInstance(props);
         MimeMessage message = new MimeMessage(session);
 
@@ -99,7 +100,7 @@ public class StudentSignupValidate extends HttpServlet {
             String pass = generatePass();
             String text = "Your password is " + pass + " , Please change it.";
 
-            sendEmail(email, "f1a2r3n4a5wani", "farnawanii@gmail.com", "Temporary Password", text);
+            sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", email, "Temporary Password", text);
             //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");

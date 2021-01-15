@@ -11,23 +11,61 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import static javax.swing.JOptionPane.showMessageDialog;
 
 /**
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSendMsg"})
-public class StudentSendMsg extends HttpServlet {
+@WebServlet(urlPatterns = {"/StaffDeleteSlot"})
+public class StaffDeleteSlot extends HttpServlet {
+    
+    
+      private static void sendEmail(String from, String pass, String to, String subject, String body) {
+        Properties props = System.getProperties();
+        String host = "smtp.gmail.com";
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.user", from);
+        props.put("mail.smtp.password", pass);
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
+        Session session = Session.getInstance(props);
+        MimeMessage message = new MimeMessage(session);
+
+        try {
+            message.setFrom(new InternetAddress(from));
+            InternetAddress toAddress = new InternetAddress(to);
+            message.addRecipient(Message.RecipientType.TO, toAddress);
+
+            message.setSubject(subject);
+            message.setText(body);
+            Transport transport = session.getTransport("smtp");
+            transport.connect(host, from, pass);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+        } catch (AddressException ae) {
+            ae.printStackTrace();
+        } catch (MessagingException me) {
+            me.printStackTrace();
+        }
+    }
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -42,47 +80,27 @@ public class StudentSendMsg extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-
-            response.setContentType("text/html");
-
-            String studID = request.getParameter("studID");
-            String taID = request.getParameter("taID");
-            String text = request.getParameter("sendMsg");
-
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO messages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
-                stmt.setString(1, text);
-                stmt.setString(2, studID);
-                stmt.setString(3, taID);
+                String OHID = request.getParameter("OHID");
+
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("DELETE FROM officehours WHERE OHID = ?");
+                stmt.setString(1, OHID);
+                stmt.executeUpdate();
+
+                stmt = (PreparedStatement) con.prepareStatement("DELETE FROM appointments WHERE OHID = ?");
+                stmt.setString(1, OHID);
                 stmt.executeUpdate();
                 
-                showMessageDialog(null, "Message Sent Successfully!!");
-
-                HttpSession session = request.getSession();
-                String url = (String) session.getAttribute("origin");
                 
-                RequestDispatcher rd = request.getRequestDispatcher(url);
+                showMessageDialog(null, "Slot Deleted Successfully!!");
+
+                RequestDispatcher rd = request.getRequestDispatcher("staffViewAppointments.jsp");
                 rd.forward(request, response);
-
-                out.close();
-                stmt.close();
-                con.close();
-
-            } catch (SQLException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                out.println(ex.toString());
-                out.close();
-
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                out.println(ex.toString());
+            } catch (ClassNotFoundException | SQLException e) {
             }
-
         }
     }
 

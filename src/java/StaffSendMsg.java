@@ -9,7 +9,6 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,8 +25,8 @@ import static javax.swing.JOptionPane.showMessageDialog;
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSendMsg"})
-public class StudentSendMsg extends HttpServlet {
+@WebServlet(urlPatterns = {"/StaffSendMsg"})
+public class StaffSendMsg extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -45,26 +44,27 @@ public class StudentSendMsg extends HttpServlet {
 
             response.setContentType("text/html");
 
+            HttpSession session = request.getSession();
+            String staffID = (String)session.getAttribute("staffID");
             String studID = request.getParameter("studID");
-            String taID = request.getParameter("taID");
             String text = request.getParameter("sendMsg");
 
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO messages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO staffmessages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
                 stmt.setString(1, text);
-                stmt.setString(2, studID);
-                stmt.setString(3, taID);
+                stmt.setString(2, staffID);
+                stmt.setString(3, studID);
                 stmt.executeUpdate();
-                
+
                 showMessageDialog(null, "Message Sent Successfully!!");
 
-                HttpSession session = request.getSession();
-                String url = (String) session.getAttribute("origin");
+//                HttpSession session = request.getSession();
+//                String url = (String) session.getAttribute("origin");
                 
-                RequestDispatcher rd = request.getRequestDispatcher(url);
+                RequestDispatcher rd = request.getRequestDispatcher("staffHome.jsp");
                 rd.forward(request, response);
 
                 out.close();
@@ -72,14 +72,14 @@ public class StudentSendMsg extends HttpServlet {
                 con.close();
 
             } catch (SQLException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
 
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
 

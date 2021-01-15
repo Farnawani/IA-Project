@@ -71,11 +71,10 @@ public class StaffChangeInfo extends HttpServlet {
                     session.setAttribute("staffPass", var);
                     stmt.close();
                 }
+                showMessageDialog(null, msg + " Changed Successfully!!");
 
                 RequestDispatcher rd = request.getRequestDispatcher("staffHome.jsp");
                 rd.forward(request, response);
-
-                showMessageDialog(null, msg + " Changed Successfully!!");
 
                 out.close();
                 con.close();

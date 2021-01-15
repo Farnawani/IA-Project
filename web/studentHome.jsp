@@ -95,6 +95,28 @@
                 %>
             </table>
         </div>
+            <%
+            stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM staffmessages WHERE ReceiverID = ?");
+            stmt.setString(1, id);
+
+            query = stmt.executeQuery();
+
+        %>
+        <br>
+        <div>
+            <table border="1">
+                <tr>
+                    <td>Messages:</td>
+                </tr>
+                <%                    while (query.next()) {
+                        String text = query.getString("MessageText");
+                %>
+                <tr>
+                    <td><%=text%></td>
+                </tr>
+                <%}%>
+            </table>
+        </div>
         <%
             stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM appointments WHERE StudID = ?");
             stmt.setString(1, id);
@@ -113,7 +135,7 @@
                 </tr>
                 <tr>
                     <td><%=time%></td>
-                    <td><a href="StudentDeleteAppointment?appID=<%=appID%>&slotID=<%=OHID%>">delete</a></td>
+                  <td><a href="StudentDeleteAppointment?appID=<%=appID%>&slotID=<%=OHID%>&slotTime=<%=time%>">delete</a></td>
                 </tr>
                 <%
                     while (query.next()) {
@@ -129,8 +151,10 @@
                     }
                 %>
             </table>
-        </div>           
+        </div>
+        
         <%
+
                 }
                 out.close();
                 query.close();

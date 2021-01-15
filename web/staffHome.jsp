@@ -20,21 +20,27 @@
         <form action="StaffSignoutValidate" method="POST">
             <input type="submit" value="Sign Out">
         </form>
+        <div style="float: right">
+            <form method="POST" action="staffViewStud.jsp"> 
+                <input type="text" placeholder="Search by Name" name="studName">
+                <input type="submit" value="Search">
+            </form>
+        </div>
+            <button><a href="staffViewAppointments.jsp">View Appointments</a></button>
         <h1>Profile</h1>
         <%
-            String name = (String) session.getAttribute("staffName");
-            System.out.println(name);
-            String email = (String) session.getAttribute("staffEmail");
-            String id = (String) session.getAttribute("staffID");
+            String staffName = (String) session.getAttribute("staffName");
+            String staffEmail = (String) session.getAttribute("staffEmail");
+            String staffID = (String) session.getAttribute("staffID");
         %>
         <table border="1">
             <tr>
                 <td style="width: 30px">Name</td>
-                <td style="width: 100px"><%=name%></td>
+                <td style="width: 100px"><%=staffName%></td>
             </tr>
             <tr>
                 <td style="width: 30px">Email</td>
-                <td style="width: 100px"><%=email%></td>
+                <td style="width: 100px"><%=staffEmail%></td>
             </tr>
         </table>
         <br>
@@ -44,6 +50,9 @@
             }
             function changePass() {
                 document.getElementById("change-pass").style.display = "block";
+            }
+            function msgReply() {
+                document.getElementById("msg-reply").style.display = "block";
             }
         </script>
         <a onclick="changeName()">Change Name</a><br>
@@ -67,16 +76,57 @@
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT subjects.SubName, staffmembers.StaffName, staffmembers.StaffID"
-                        + " FROM subjects"
-                        + " Left Join staffmembers on subjects.StaffID = staffmembers.StaffID"
-                        + " order by subjects.SubName;");
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM messages WHERE ReceiverID = ?");
+                stmt.setString(1, staffID);
                 ResultSet query;
                 query = stmt.executeQuery();
         %>
-        
+        <div style="float: right">
+            <table border="1">
+                <tr>
+                    <td>Messages</td>
+                </tr>
+                <%
+                    while (query.next()) {
+                        String text = query.getString("MessageText");
+                        String studID = query.getString("ReceiverID");
+                %>
+                <tr>
+                    <td><%=text%></td>
+                    <td><a onclick="msgReply()">Reply</a></td>
+                    <td>
+                        <div id="msg-reply" style="display: none">
+                            <form method="post" action="StaffSendMsg?studID=<%=studID%>">
+                                <textarea rows="3" cols="30" name="sendMsg"></textarea>
+                                <input type="submit" value="Send">
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <%}%>
+            </table>
+        </div>
+        <%stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM students");
+                query = stmt.executeQuery();%>
+        <div>
+            <form action="staffMsgStud.jsp" method="POST">
+                <label for="studs">Select a Student:</label>
+                <select name="sid" id="studs">
+                    <%
+                        while (query.next()) {
+                            String sID = query.getString("StudID");
+                            String sName = query.getString("StudName");
+                    %>
+                    <option value="<%=sID%>"><%=sName%></option>
+                    <%
+                        }
+                    %>
+                </select>
+                <br><br>
+                <input type="submit" value="Select">
+            </form>
+        </div>
         <%
-                
                 out.close();
                 query.close();
                 stmt.close();

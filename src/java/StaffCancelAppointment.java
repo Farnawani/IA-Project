@@ -10,29 +10,29 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
-import javax.mail.*;
-import javax.mail.internet.*;
-import javax.activation.*;
 import java.sql.SQLException;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import static javax.swing.JOptionPane.showMessageDialog;
 
 /**
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StaffSignupValidate"})
-public class StaffSignupValidate extends HttpServlet {
+@WebServlet(urlPatterns = {"/StaffCancelAppointment"})
+public class StaffCancelAppointment extends HttpServlet {
 
     private static void sendEmail(String from, String pass, String to, String subject, String body) {
         Properties props = System.getProperties();
@@ -66,17 +66,8 @@ public class StaffSignupValidate extends HttpServlet {
         }
     }
 
-    String generatePass() {
-        String pass = "";
-        String alph = "qwertyuiopasdfghjklzxcvbnm1234567890";
-        for (int i = 0; i < 10; i++) {
-            Random random = new Random();
-            int r = random.nextInt(alph.length());
-            pass += alph.charAt(r);
-        }
-        return pass;
-    }
-
+    
+    
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -89,59 +80,55 @@ public class StaffSignupValidate extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-
         try (PrintWriter out = response.getWriter()) {
-
-            response.setContentType("text/html");
-
-            String name = request.getParameter("staffName");
-            String email = request.getParameter("staffEmail");
-            String pass = generatePass();
-            String text = "Your password is " + pass + " , Please change it.";
-
-            sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", email, "Temporary Password", text);
-            //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO staffmembers (StaffName, StaffEmail, StaffPass) VALUES(?, ?, ?)");
-                stmt.setString(1, name);
-                stmt.setString(2, email);
-                stmt.setString(3, pass);
+                String OHID = request.getParameter("OHID");
 
-                int result = stmt.executeUpdate();
-
-                if (result != 0) {
-                    RequestDispatcher rd = request.getRequestDispatcher("staffSignin.jsp");
-
-                    rd.forward(request, response);
-                } else {
-                    showMessageDialog(null, "Incorrect username or password !!");
-                    RequestDispatcher rd = request.getRequestDispatcher("staffSignup.jsp");
-                    rd.forward(request, response);
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM appointments WHERE OHID = ?");
+                stmt.setString(1, OHID);
+                ResultSet set = stmt.executeQuery();
+                String studentId = "";
+                String date = "";
+                if(set.next())
+                {
+                    studentId = set.getString("StudID");
+                    date = set.getString("Date");
+                    
                 }
+                
+                stmt = (PreparedStatement) con.prepareStatement("SELECT * FROM students WHERE StudID = ?");
+                stmt.setString(1, studentId);
+                set = stmt.executeQuery();
+                String studentEmail = "";
+                if(set.next())
+                {
+                    studentEmail = set.getString("StudEmail");
+                }
+                
+                stmt = (PreparedStatement) con.prepareStatement("DELETE FROM appointments WHERE OHID = ?");
+                stmt.setString(1, OHID);
+                stmt.executeUpdate();
+                
+                stmt = (PreparedStatement) con.prepareStatement("UPDATE officehours SET Avail = 1 WHERE OHID = ?");
+                stmt.setString(1, OHID);
+                stmt.executeUpdate();
 
-                out.close();
-                stmt.close();
-                con.close();
+                showMessageDialog(null, "Appointment Cancelled Successfully!!");
+                
+//                sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", studEmail, "Appointment Cancellation", text);
 
-            } catch (SQLException ex) {
-                Logger.getLogger(StaffSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                out.println(ex.toString());
-                // RequestDispatcher rd=request.getRequestDispatcher("Login.html");  
-                //rd.forward(request, response);
-                out.close();
-
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StaffSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                out.println(ex.toString());
+                String text = "Your Appointment, reserved at " + date + ", is cancelled.";
+                sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", studentEmail, "Appointment Cancellation", text);
+                
+                RequestDispatcher rd = request.getRequestDispatcher("staffViewAppointments.jsp");
+                rd.forward(request, response);
+            } catch (Exception e) {
+                out.print(e);
             }
-
         }
-
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

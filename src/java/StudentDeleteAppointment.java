@@ -104,9 +104,10 @@ public class StudentDeleteAppointment extends HttpServlet {
                 stmt.setInt(2, slotID);
                 stmt.executeUpdate();
                 
-                showMessageDialog(null, "Appointment deleted Successfully!!");
                 String text = "Your Appointment, reserved at " + slotTime + ", is cancelled.";
                 sendEmail("farnawanii@gmail.com", "f1a2r3n4a5wani", studEmail, "Appointment Cancellation", text);
+                
+                showMessageDialog(null, "Appointment deleted Successfully!!");
                 
                 RequestDispatcher rd = request.getRequestDispatcher("studentHome.jsp");
                 rd.forward(request, response);

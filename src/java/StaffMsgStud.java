@@ -6,28 +6,25 @@
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.System.out;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import static javax.swing.JOptionPane.showMessageDialog;
+import org.apache.jasper.Constants;
 
 /**
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSendMsg"})
-public class StudentSendMsg extends HttpServlet {
+@WebServlet(urlPatterns = {"/StaffMsgStud"})
+public class StaffMsgStud extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -42,48 +39,30 @@ public class StudentSendMsg extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-
-            response.setContentType("text/html");
-
-            String studID = request.getParameter("studID");
-            String taID = request.getParameter("taID");
-            String text = request.getParameter("sendMsg");
-
-            try {
-                Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO messages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
-                stmt.setString(1, text);
-                stmt.setString(2, studID);
-                stmt.setString(3, taID);
-                stmt.executeUpdate();
-                
-                showMessageDialog(null, "Message Sent Successfully!!");
-
+                String studID = request.getParameter("studID");
+                String text = request.getParameter("sendMsg");
                 HttpSession session = request.getSession();
-                String url = (String) session.getAttribute("origin");
+                String staffID = (String) session.getAttribute("studID");
                 
-                RequestDispatcher rd = request.getRequestDispatcher(url);
-                rd.forward(request, response);
-
-                out.close();
-                stmt.close();
-                con.close();
-
-            } catch (SQLException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO staffmessages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
+                stmt.setString(1, text);
+                stmt.setString(2, staffID);
+                stmt.setString(3, studID);
+                stmt.executeUpdate();
+        }catch (SQLException ex) {
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
 
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StudentSignupValidate.class
+//                        .getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
-
-        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

@@ -9,7 +9,6 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,8 +25,8 @@ import static javax.swing.JOptionPane.showMessageDialog;
  *
  * @author farna
  */
-@WebServlet(urlPatterns = {"/StudentSendMsg"})
-public class StudentSendMsg extends HttpServlet {
+@WebServlet(urlPatterns = {"/StaffAddSlot"})
+public class StaffAddSlot extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -42,47 +41,34 @@ public class StudentSendMsg extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-
-            response.setContentType("text/html");
-
-            String studID = request.getParameter("studID");
-            String taID = request.getParameter("taID");
-            String text = request.getParameter("sendMsg");
-
             try {
                 Class.forName("com.mysql.jdbc.Driver");
                 Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/StaffManagement", "root", "root");
 
-                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO messages (MessageText, SenderID, ReceiverID) VALUES(?, ?, ?)");
-                stmt.setString(1, text);
-                stmt.setString(2, studID);
-                stmt.setString(3, taID);
-                stmt.executeUpdate();
                 
-                showMessageDialog(null, "Message Sent Successfully!!");
-
+                String from = request.getParameter("fromDate");
+                String to = request.getParameter("toDate");
                 HttpSession session = request.getSession();
-                String url = (String) session.getAttribute("origin");
-                
-                RequestDispatcher rd = request.getRequestDispatcher(url);
+                String staffID = (String) session.getAttribute("staffID");
+
+                PreparedStatement stmt = (PreparedStatement) con.prepareStatement("INSERT INTO officehours (DateFrom, DateTo, StaffID) VALUES(?, ?, ?)");
+                stmt.setString(1, from);
+                stmt.setString(2, to);
+                stmt.setString(3, staffID);
+                stmt.executeUpdate();
+
+                showMessageDialog(null, "Slot Added Successfully!!");
+
+                RequestDispatcher rd = request.getRequestDispatcher("staffViewAppointments.jsp");
                 rd.forward(request, response);
-
-                out.close();
-                stmt.close();
-                con.close();
-
             } catch (SQLException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StaffSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
                 out.close();
-
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(StudentSignupValidate.class
-                        .getName()).log(Level.SEVERE, null, ex);
+//                Logger.getLogger(StaffSigninValidate.class.getName()).log(Level.SEVERE, null, ex);
                 out.println(ex.toString());
             }
-
         }
     }
 
