@@ -60,9 +60,12 @@ public class StaffSigninValidate extends HttpServlet {
                 user = stmt.executeQuery();
 
                 if (user.next()) {
+                    String staffID = user.getString("StaffID");
+                    String staffName = user.getString("StaffName");
                     HttpSession session = request.getSession();
+                    session.setAttribute("staffName", staffName);
                     session.setAttribute("staffEmail", email);
-                    session.setAttribute("staffPass", pass);
+                    session.setAttribute("staffID", staffID);
                     RequestDispatcher rd = request.getRequestDispatcher("staffHome.jsp");
                     rd.forward(request, response);
                 } else {

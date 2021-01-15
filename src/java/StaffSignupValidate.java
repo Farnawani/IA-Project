@@ -34,37 +34,35 @@ import static javax.swing.JOptionPane.showMessageDialog;
 @WebServlet(urlPatterns = {"/StaffSignupValidate"})
 public class StaffSignupValidate extends HttpServlet {
 
-    void sendAnEmail() {
-        String from = "farnawanii@gmail.com";
-        String to = "farnawani@outlook.com";
-
-        Properties props = new Properties();
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.socketFactory.port", "465");
-        props.put("mail.smtp.socketFactory.class",
-                "javax.net.ssl.SSLSocketFactory");
+    private static void sendEmail(String from, String pass, String to, String subject, String body) {
+        Properties props = System.getProperties();
+        String host = "smtp.gmail.com";
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.user", from);
+        props.put("mail.smtp.password", pass);
+        props.put("mail.smtp.port", "587");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.port", "465");
-        Session session = Session.getDefaultInstance(props,
-                new javax.mail.Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, "f1a2r3n4a5wani");
-            }
-        });
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
+        Session session = Session.getInstance(props);
+        MimeMessage message = new MimeMessage(session);
 
         try {
-            MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-            message.setSubject("Bingo");
-            message.setText("Done MotherFucker!!");
+            InternetAddress toAddress = new InternetAddress(to);
+            message.addRecipient(Message.RecipientType.TO, toAddress);
 
-            // Send message  
-            Transport.send(message);
-            System.out.println("message sent successfully....");
-
-        } catch (MessagingException mex) {
-            mex.printStackTrace();
+            message.setSubject(subject);
+            message.setText(body);
+            Transport transport = session.getTransport("smtp");
+            transport.connect(host, from, pass);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+        } catch (AddressException ae) {
+            ae.printStackTrace();
+        } catch (MessagingException me) {
+            me.printStackTrace();
         }
     }
 
@@ -99,8 +97,9 @@ public class StaffSignupValidate extends HttpServlet {
             String name = request.getParameter("staffName");
             String email = request.getParameter("staffEmail");
             String pass = generatePass();
+            String text = "Your password is " + pass + " , Please change it.";
 
-            sendAnEmail();
+            sendEmail(email, "f1a2r3n4a5wani", "farnawanii@gmail.com", "Temporary Password", text);
             //connecting to database
             try {
                 Class.forName("com.mysql.jdbc.Driver");
@@ -114,10 +113,7 @@ public class StaffSignupValidate extends HttpServlet {
                 int result = stmt.executeUpdate();
 
                 if (result != 0) {
-//                    HttpSession session = request.getSession();
-//                    session.setAttribute("customerID", id);
-//                    session.setAttribute("customerPass", pass);
-                    RequestDispatcher rd = request.getRequestDispatcher("staffHome.jsp");
+                    RequestDispatcher rd = request.getRequestDispatcher("staffSignin.jsp");
 
                     rd.forward(request, response);
                 } else {
